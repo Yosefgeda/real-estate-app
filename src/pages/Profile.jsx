@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   getDownloadURL,
   getStorage,
@@ -7,20 +7,34 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { app } from "../firebase";
+import {
+  updateUserFailure,
+  updateUserStart,
+  updateUserSuccess,
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+  signOut
+} from "../redux/user/userSlice";
 
 const Profile = () => {
-  const { currentUser } = useSelector((store) => store.user);
+  const { currentUser, loading, error } = useSelector((store) => store.user);
   const inputReference = useRef(null); //references the <input 'type file' > to the picture. i.e when the picture is clicked the file chooser is opened
   const [image, setImage] = useState(undefined);
   const [load, setLoad] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [formData, setFormData] = useState({});
+  const [updateSuccess, setUpdaateSuccess] = useState(false);
+  const dispatch = useDispatch();
 
   const handleImageUpload = async (image) => {
     const storage = getStorage(app);
     const fileName = new Date().getTime() + image.name;
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, image);
+
+    //  Loading progress for upload picture
+
     uploadTask.on("state_changed", (snapshot) => {
       const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
       setLoad(Math.round(progress));
@@ -37,15 +51,70 @@ const Profile = () => {
       };
     });
   };
+  
   useEffect(() => {
     if (image) {
       handleImageUpload(image);
     }
   }, [image]);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      console.log(data);
+      if (data.success === false) {
+        dispatch(updateUserFailure(data));
+      }
+      dispatch(updateUserSuccess(data));
+      setUpdaateSuccess(true);
+    } catch (err) {
+      dispatch(updateUserFailure(err));
+    }
+  };
+
+  const handleDeleteAccount = async (e) => {
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: 'DELETE',
+       
+      });
+      const data = await res.json();
+      console.log(res)
+      if(data.success === false) {
+        dispatch(deleteUserFailure(data))
+      };
+      dispatch(deleteUserSuccess(data))
+    } catch (err) {
+      dispatch(deleteUserFailure(err))
+    }
+  };
+
+  const handleSignout = async() => {
+    try {
+      await fetch('/app/auth/signout');
+      dispatch(signOut());
+    } catch(err) {
+      console.log(err)
+    }
+  }
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
-      <form className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="file"
           ref={inputReference}
@@ -54,7 +123,7 @@ const Profile = () => {
           onChange={(e) => setImage(e.target.files[0])}
         />
         <img
-          src={currentUser.profilePicture}
+          src={formData.profilePicture || currentUser.profilePicture}
           className="h-24 w-24 rounded-full cursor-pointer object-cover self-center mt-3"
           onClick={() => inputReference.current.click()}
         />
@@ -77,6 +146,7 @@ const Profile = () => {
           id="username"
           placeholder="Username"
           className="bg-slate-100 rounded-lg p-3"
+          onChange={handleChange}
         />
         <input
           defaultValue={currentUser.email}
@@ -84,21 +154,32 @@ const Profile = () => {
           id="email"
           placeholder="Email"
           className="bg-slate-100 rounded-lg p-3"
+          onChange={handleChange}
         />
         <input
           type="password"
           id="password"
           placeholder="Password"
           className="bg-slate-100 rounded-lg p-3"
+          onChange={handleChange}
         />
         <button className="bg-slate-700 text-white p-3 rounded-lg hover:opacity-95">
-          UPDATE
+          {loading ? "Loading.." : "UPDATE"}
         </button>
       </form>
       <div className="flex justify-between mt-5">
-        <span className="text-red-600 cursor-pointer">Delete Account</span>
-        <span className="text-red-600 cursor-pointer">Sign Out</span>
+        <span
+          onClick={handleDeleteAccount}
+          className="text-red-600 cursor-pointer"
+        >
+          Delete Account
+        </span>
+        <span onClick={handleSignout} className="text-red-600 cursor-pointer">Sign Out</span>
       </div>
+      <p className="text-red-700 mt-5">{error && "Something went wrong"}</p>
+      <p className="text-green-700 mt-5">
+        {updateSuccess && "Update Successful"}
+      </p>
     </div>
   );
 };
