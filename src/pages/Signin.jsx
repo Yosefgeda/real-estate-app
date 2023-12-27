@@ -8,7 +8,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import OAuth from '../components/OAuth';
 
-export default function SignIn() {
+const SignIn = () => {
   const [formData, setFormData] = useState({});
   const { loading, error } = useSelector((state) => state.user);
 
@@ -78,3 +78,5 @@ export default function SignIn() {
     </div>
   );
 }
+
+export default SignIn;
