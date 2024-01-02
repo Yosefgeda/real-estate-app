@@ -14,7 +14,7 @@ import {
   deleteUserFailure,
   deleteUserStart,
   deleteUserSuccess,
-  signOut
+  signOut,
 } from "../redux/user/userSlice";
 import { Link } from "react-router-dom";
 
@@ -26,6 +26,8 @@ const Profile = () => {
   const [imageError, setImageError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdaateSuccess] = useState(false);
+  const [listing, setListing] = useState([]);
+  const [listingError, setListingError] = useState(false);
   const dispatch = useDispatch();
 
   const handleImageUpload = async (image) => {
@@ -52,7 +54,7 @@ const Profile = () => {
       };
     });
   };
-  
+
   useEffect(() => {
     if (image) {
       handleImageUpload(image);
@@ -89,28 +91,43 @@ const Profile = () => {
     try {
       dispatch(deleteUserStart());
       const res = await fetch(`/api/user/delete/${currentUser._id}`, {
-        method: 'DELETE',
-       
+        method: "DELETE",
       });
       const data = await res.json();
-      console.log(res)
-      if(data.success === false) {
-        dispatch(deleteUserFailure(data))
-      };
-      dispatch(deleteUserSuccess(data))
+      console.log(res);
+      if (data.success === false) {
+        dispatch(deleteUserFailure(data));
+      }
+      dispatch(deleteUserSuccess(data));
     } catch (err) {
-      dispatch(deleteUserFailure(err))
+      dispatch(deleteUserFailure(err));
     }
   };
 
-  const handleSignout = async() => {
+  const handleSignout = async () => {
     try {
-      await fetch('/app/auth/signout');
+      await fetch("/app/auth/signout");
       dispatch(signOut());
-    } catch(err) {
-      console.log(err)
+    } catch (err) {
+      console.log(err);
     }
-  }
+  };
+
+  const handleShowListing = async () => {
+    try {
+      setListingError(false);
+      const res = await fetch(`/api/user/listings/${currentUser._doc._id}`);
+      const data = await res.json();
+      console.log(data);
+      if (data.success === false) {
+        setListingError(data.message);
+        return;
+      }
+      setListing(data);
+    } catch (err) {
+      setListingError(err.message);
+    }
+  };
 
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -167,7 +184,10 @@ const Profile = () => {
         <button className="bg-slate-700 text-white p-3 rounded-lg hover:opacity-95">
           {loading ? "Loading.." : "UPDATE"}
         </button>
-        <Link to={"/create-listing"} className="bg-green-700 text-white text-center p-3 rounded-lg hover:opacity-95">
+        <Link
+          to={"/create-listing"}
+          className="bg-green-700 text-white text-center p-3 rounded-lg hover:opacity-95"
+        >
           CREATE LISTING
         </Link>
       </form>
@@ -178,12 +198,41 @@ const Profile = () => {
         >
           Delete Account
         </span>
-        <span onClick={handleSignout} className="text-red-600 cursor-pointer">Sign Out</span>
+        <span onClick={handleSignout} className="text-red-600 cursor-pointer">
+          Sign Out
+        </span>
       </div>
       <p className="text-red-700 mt-5">{error && "Something went wrong"}</p>
       <p className="text-green-700 mt-5">
         {updateSuccess && "Update Successful"}
       </p>
+      <button onClick={handleShowListing} className="text-green-700 w-full">
+        SHOW LISTINGS
+      </button>
+      {listing.length > 0
+        ? listing.map((item) => (
+            <div
+              key={item._id}
+              className=" border rounded-lg flex justify-between items-center p-3 mt-3"
+            >
+              <Link to={item._id}>
+                <img
+                  src={item.imageUrls[0]}
+                  alt="Listing Cover"
+                  className="w-16 h-16 object-contain"
+                />
+              </Link>
+              <Link to={item._id}>
+                <p>{item.name}</p>
+              </Link>
+              <div className="flex flex-col">
+                <button className="text-red-500">DELETE</button>
+                <button className="text-green-500">EDIT</button>
+              </div>
+            </div>
+          ))
+        : "No listings"}
+      <p>{listingError && listingError}</p>
     </div>
   );
 };
