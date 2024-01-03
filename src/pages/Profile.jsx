@@ -118,7 +118,6 @@ const Profile = () => {
       setListingError(false);
       const res = await fetch(`/api/user/listings/${currentUser._doc._id}`);
       const data = await res.json();
-      console.log(data);
       if (data.success === false) {
         setListingError(data.message);
         return;
@@ -129,6 +128,16 @@ const Profile = () => {
     }
   };
 
+  const handleListingDelete = async (id) => {
+    try{
+     const res = await fetch(`/api/listing/delete/${id}`, {
+        method: "DELETE",
+      });
+      setListing(prev => prev.filter(item => item._id !== id))
+    } catch( err ){
+      console.log(err);
+    }
+  }
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
@@ -226,7 +235,7 @@ const Profile = () => {
                 <p>{item.name}</p>
               </Link>
               <div className="flex flex-col">
-                <button className="text-red-500">DELETE</button>
+                <button onClick={() => handleListingDelete(item._id)} className="text-red-500">DELETE</button>
                 <button className="text-green-500">EDIT</button>
               </div>
             </div>
