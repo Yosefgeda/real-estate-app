@@ -33,19 +33,21 @@ const UpdateListing = () => {
   const [load, setLoad] = useState(false);
   const params = useParams();
 
+
+  // Loads the listing data
   useEffect(() => {
     const fetchListing = async () => {
-        const id = params.id;
-        const res = await fetch(`/api/listing/getListing/${id}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await res.json();
-        setFormData(data)
-            
-        console.log(id)
+      const id = params.id;
+      const res = await fetch(`/api/listing/getListing/${id}`, {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json'
+          }
+      });
+      const data = await res.json();
+      setFormData(data)
+          
+      console.log(id)
     }
     fetchListing()
   }, [])

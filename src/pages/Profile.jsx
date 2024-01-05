@@ -218,20 +218,20 @@ const Profile = () => {
       <button onClick={handleShowListing} className="text-green-700 w-full">
         SHOW LISTINGS
       </button>
-      {listing.length > 0
-        ? listing.map((item) => (
+      {listing.length
+         ? listing.map((item) => (
             <div
               key={item._id}
               className=" border rounded-lg flex justify-between items-center p-3 mt-3"
             >
-              <Link to={item._id}>
+              <Link to={`/listing/${item._id}`}>
                 <img
                   src={item.imageUrls[0]}
                   alt="Listing Cover"
                   className="w-16 h-16 object-contain"
                 />
               </Link>
-              <Link to={item._id}>
+              <Link to={`/listing/${item._id}`}>
                 <p>{item.name}</p>
               </Link>
               <div className="flex flex-col">
@@ -241,8 +241,7 @@ const Profile = () => {
                 </Link>
               </div>
             </div>
-          ))
-        : "No listings"}
+          )): ''}
       <p>{listingError && listingError}</p>
     </div>
   );
