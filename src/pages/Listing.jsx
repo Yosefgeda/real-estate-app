@@ -6,13 +6,19 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css/bundle'; // npm i swiper;
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMapMarkerAlt, faBed, faBath, faParking, faChair } from '@fortawesome/free-solid-svg-icons';
+import { useSelector } from 'react-redux';
+import Contact from '../components/Contact';
+
 
 const Listing = () => {
     SwiperCore.use([Navigation]);
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [contact, setContact] = useState(false); 
+
     const params = useParams();
+    const { currentUser } = useSelector((state) => state.user);
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -31,7 +37,6 @@ const Listing = () => {
                     return
                 }
                 setListing(data);
-                console.log(data);
                 setLoading(false);
                 setError(false);
             } catch(err) {
@@ -46,29 +51,27 @@ const Listing = () => {
         {loading && <p className='text-center mt-10 text-2xl'>Loading...</p>}
         {error && <p className='text-center mt-10 text-2xl'>{error}</p>}
         {listing && !loading && !error && 
-            <>
+            <div>
                 <Swiper navigation>
                     {
-                        listing.imageUrls.map((url) => {
-                            return (
+                        listing.imageUrls.map((url) => 
                                 <>
                                     <SwiperSlide key={url}>
                                         <div 
+                                            key={url}
                                             className='h-[400px]' 
                                             style={{ background:`url(${url}) center no-repeat`, backgroundSize: 'cover'}}>
                                         </div>
                                     </SwiperSlide>
                                 </>
-                                
-                            )
-                        })
+                        )
                     }
                 </Swiper>
                 <div className='m-7 flex gap-3'>
                     <h1 className='text-2xl'>{listing.name}</h1>
                     <h1 className='text-2xl text-green-700'>${listing.regularPrice} 
                         <span>
-                            {listing.type === 'rent' ? '/month' : ''}
+                            {listing.type === 'rent' ? ' / month' : ''}
                         </span>
                     </h1>
                 </div>
@@ -107,9 +110,14 @@ const Listing = () => {
                         <FontAwesomeIcon icon={faChair}  className='text-green-500 text-lg'/>
                         {listing.furnished ? `Furnished` : `Not Furnished`}
                     </li>
-                    
                 </ul>
-            </>
+                {currentUser && listing.userRef === currentUser._doc._id && !contact &&
+                    (<div onClick={() => setContact(true)} className='text-center m-7'>
+                        <button className='bg-red-500 w-full p-3 text-white rounded-lg sm:w-1/6 hover:opacity-95 md:w-1/4'>CONTACT LANDLORD</button>
+                    </div>
+                )}
+                {contact && <Contact listing={listing} />}
+            </div>
         }
     </main>
   )
